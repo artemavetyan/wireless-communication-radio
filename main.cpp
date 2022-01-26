@@ -16,14 +16,14 @@ const int NUMBER_OF_LEDS = 6;
 bool isNextButtonClicked = false;
 bool isBackButtonClicked = false;
 
-// BufferedSerial pc(USBTX, USBRX); // tx, rx
+BufferedSerial pc(USBTX, USBRX); // tx, rx
 
 nRF24L01P my_nrf24l01p(D11, D12, D13, D8, D9, D7);    // mosi, miso, sck, csn, ce, irq
 
-// FileHandle *mbed::mbed_override_console(int fd)
-// {
-//     return &pc;
-// }
+FileHandle *mbed::mbed_override_console(int fd)
+{
+    return &pc;
+}
 
 int SPIread() {
     cs.write(0);
@@ -51,41 +51,108 @@ void writeLed(int nextLedIndex) {
     cs = 1;
 }
 
+char updateLEDChar(int ledIndex){
+    switch (ledIndex) {
+        case 0:
+            return '0';
+        case 1:
+            return '1';
+        case 2:
+            return '2';
+        case 3:
+            return '3';
+        case 4:
+            return '4';
+        case 5:
+            return '5';
+        default:
+        //updateLEDChar is called before write led can catch out of bounds indexs
+            if(ledIndex == 6){ 
+                return '0';
+            }else{
+                return '5';
+            }
+    }
+}
+
+void updateLEDIndex(char ledIndex){
+    switch (ledIndex) {
+        case '0':
+            writeLed(0);
+            break;
+        case '1':
+            writeLed(1);
+            break;
+        case '2':
+            writeLed(2);
+            break;
+        case '3':
+            writeLed(3);
+            break;
+        case '4':
+            writeLed(4);
+            break;
+        case '5':
+            writeLed(5);
+            break;
+    }
+}
+
 void ledLoop() {
     int currentValue = SPIread();
 
     if (!isNextButtonClicked && (currentValue & 128) == 0) {
         isNextButtonClicked = true;
-
-        txData[0] = 'A';
-        txData[1] = '1';
+        currentLedIndex += 1;
+        txData[0] = 'C';
+        // txData[1] = '2';
+        txData[1] = updateLEDChar(currentLedIndex);
         my_nrf24l01p.write( NRF24L01P_PIPE_P0, txData, TRANSFER_SIZE );
         printf( "Increase!\r\n");
 
-        writeLed(++currentLedIndex);
+        writeLed(currentLedIndex);
     } else if (!isBackButtonClicked && (currentValue & 64) == 0) {
         isBackButtonClicked = true;
 
+        currentLedIndex -= 1;
         txData[0] = 'C';
-        txData[1] = '2';
+        txData[1] = updateLEDChar(currentLedIndex);
         my_nrf24l01p.write( NRF24L01P_PIPE_P0, txData, TRANSFER_SIZE );
         printf( "Decrease!\r\n");
 
-        writeLed(--currentLedIndex);
+        writeLed(currentLedIndex);
     } else if ((currentValue & 64) != 0 && (currentValue & 128) != 0) {
         isNextButtonClicked = false;
         isBackButtonClicked = false;
     }
 }
 
+
+
 void checkReceivedMessage(char message[TRANSFER_SIZE]) {
-    printf("%s", message);
+    //printf("%s", message);
 
     char commandType = message[0];
     char ledIndex = message[1];
-    if (ledIndex == '1') {
-        writeLed(++currentLedIndex);
+
+    //Check for command
+    if(commandType == 'C'){
+        updateLEDIndex(ledIndex);
+        pc.write(&message[0], TRANSFER_SIZE);
     }
+
+    //Check index
+
+
+    // if (ledIndex == '1') {
+    //     writeLed(++currentLedIndex);
+    //     // pc.write(&message[0], TRANSFER_SIZE);
+    //     pc.write("Increase", sizeof("Increase"));
+    // }
+    // else if (ledIndex == '2') {
+    //     writeLed(--currentLedIndex);
+    //     pc.write("Decrease", sizeof("Decrease"));
+    // }
 }
 
 int main() {
@@ -124,7 +191,7 @@ int main() {
     my_nrf24l01p.enable();
 
     while (1) {
-        // ledLoop();
+        ledLoop();
 
         // If we've received anything in the nRF24L01+...
         if ( my_nrf24l01p.readable() ) {
@@ -134,6 +201,12 @@ int main() {
             // pc.write(&rxData[0], sizeof( rxData ));
 
             checkReceivedMessage(&rxData[0]);
+
+
+            /**
+            * Check for acknowledgment.
+            * Then update LED position.
+            **/
 
         }
     }
