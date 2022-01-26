@@ -1,0 +1,4 @@
+data/mbed-os.lib.i
+data/main.cpp.i
+data/nRF24L01P.lib.i
+data/mbed.bld.i

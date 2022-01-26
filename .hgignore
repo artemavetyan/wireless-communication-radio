@@ -1,0 +1,4 @@
+^BUILD$
+^.mbed$
+^nRF24L01P$
+^mbed-os$
