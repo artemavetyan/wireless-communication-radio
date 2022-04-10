@@ -4,7 +4,9 @@
 
 enum { TRANSFER_SIZE = 2 };
 char txData[TRANSFER_SIZE], rxData[TRANSFER_SIZE];
+char lastMessage[TRANSFER_SIZE];
 
+Timeout timeout;
 
 SPI spi(D11, D12, D13); // mosi, miso, sclk
 DigitalOut cs(D10, 1);
@@ -15,6 +17,8 @@ const int NUMBER_OF_LEDS = 6;
 
 bool isNextButtonClicked = false;
 bool isBackButtonClicked = false;
+
+static EventQueue event_queue(/* event count */ 10 * EVENTS_EVENT_SIZE);
 
 BufferedSerial pc(USBTX, USBRX); // tx, rx
 
@@ -98,6 +102,32 @@ void updateLEDIndex(char ledIndex){
     }
 }
 
+// class TransmitData{
+//     public:
+//         TransmitData(){
+
+//         }
+
+    void storeLastMessage(char message[TRANSFER_SIZE]){
+        lastMessage[0] = message[0];
+        lastMessage[1] = message[1];
+    }
+
+    void sendData(char message[TRANSFER_SIZE]){
+        storeLastMessage(message);
+        my_nrf24l01p.write( NRF24L01P_PIPE_P0, message, TRANSFER_SIZE );
+    }
+    void sendLastMessage(){
+            my_nrf24l01p.write( NRF24L01P_PIPE_P0, lastMessage, TRANSFER_SIZE );
+    }
+
+    
+    // private:
+        
+
+// };
+
+
 void ledLoop() {
     int currentValue = SPIread();
 
@@ -107,26 +137,27 @@ void ledLoop() {
         txData[0] = 'C';
         // txData[1] = '2';
         txData[1] = updateLEDChar(currentLedIndex);
-        my_nrf24l01p.write( NRF24L01P_PIPE_P0, txData, TRANSFER_SIZE );
+        sendData(txData);
+        timeout.attach(callback(&sendLastMessage), 2.0);
         printf( "Increase!\r\n");
 
-        writeLed(currentLedIndex);
+        // writeLed(currentLedIndex);
     } else if (!isBackButtonClicked && (currentValue & 64) == 0) {
         isBackButtonClicked = true;
 
         currentLedIndex -= 1;
         txData[0] = 'C';
         txData[1] = updateLEDChar(currentLedIndex);
-        my_nrf24l01p.write( NRF24L01P_PIPE_P0, txData, TRANSFER_SIZE );
+        sendData(txData);
+        timeout.attach(callback(&sendLastMessage), 2.0);
         printf( "Decrease!\r\n");
 
-        writeLed(currentLedIndex);
+        // writeLed(currentLedIndex);
     } else if ((currentValue & 64) != 0 && (currentValue & 128) != 0) {
         isNextButtonClicked = false;
         isBackButtonClicked = false;
     }
 }
-
 
 
 void checkReceivedMessage(char message[TRANSFER_SIZE]) {
@@ -135,11 +166,27 @@ void checkReceivedMessage(char message[TRANSFER_SIZE]) {
     char commandType = message[0];
     char ledIndex = message[1];
 
+    printf("Recived message: ");
+
     //Check for command
     if(commandType == 'C'){
         updateLEDIndex(ledIndex);
         pc.write(&message[0], TRANSFER_SIZE);
+
+        // storeLastMessage(message);
+
+        // ThisThread::sleep_for(300);
+
+        message[0] = 'A';
+        message[1] = ledIndex;
+        my_nrf24l01p.write( NRF24L01P_PIPE_P0, message, TRANSFER_SIZE );
+    }else if(commandType == 'A'){
+        timeout.detach();
+        updateLEDIndex(ledIndex);
+        pc.write(&message[0], TRANSFER_SIZE);
     }
+
+    printf("\r\n");
 
     //Check index
 
@@ -170,8 +217,8 @@ int main() {
     spi.write(0xDF);
     cs = 1;   
 
-    my_nrf24l01p.setTxAddress(0xC74FB7CDC7);
-    my_nrf24l01p.setRxAddress(0xC74FB7CDC8);
+    my_nrf24l01p.setTxAddress(0xC74FB7CDC8);
+    my_nrf24l01p.setRxAddress(0xC74FB7CDC7);
 
     my_nrf24l01p.powerUp();
 

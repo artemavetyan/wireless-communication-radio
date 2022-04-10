@@ -2,7 +2,7 @@
     {
         "module": "[lib]\\c_w.l",
         "size": {
-            ".text": 4344,
+            ".text": 4460,
             ".data": 16,
             ".bss": 348,
             ".text-delta": 0,
@@ -46,9 +46,9 @@
     {
         "module": "main.o",
         "size": {
-            ".text": 1261,
+            ".text": 1673,
             ".data": 0,
-            ".bss": 1238,
+            ".bss": 1396,
             ".text-delta": 0,
             ".data-delta": 0,
             ".bss-delta": 0
@@ -57,7 +57,7 @@
     {
         "module": "mbed-os\\cmsis",
         "size": {
-            ".text": 10777,
+            ".text": 11245,
             ".data": 168,
             ".bss": 6993,
             ".text-delta": 0,
@@ -68,7 +68,7 @@
     {
         "module": "mbed-os\\connectivity",
         "size": {
-            ".text": 575,
+            ".text": 583,
             ".data": 0,
             ".bss": 60,
             ".text-delta": 0,
@@ -79,9 +79,20 @@
     {
         "module": "mbed-os\\drivers",
         "size": {
-            ".text": 4972,
+            ".text": 5410,
             ".data": 0,
             ".bss": 620,
+            ".text-delta": 0,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "mbed-os\\events",
+        "size": {
+            ".text": 290,
+            ".data": 0,
+            ".bss": 0,
             ".text-delta": 0,
             ".data-delta": 0,
             ".bss-delta": 0
@@ -101,7 +112,7 @@
     {
         "module": "mbed-os\\platform",
         "size": {
-            ".text": 9217,
+            ".text": 9231,
             ".data": 64,
             ".bss": 420,
             ".text-delta": 0,
@@ -112,9 +123,9 @@
     {
         "module": "mbed-os\\rtos",
         "size": {
-            ".text": 560,
+            ".text": 718,
             ".data": 0,
-            ".bss": 0,
+            ".bss": 8,
             ".text-delta": 0,
             ".data-delta": 0,
             ".bss-delta": 0
@@ -144,9 +155,9 @@
     },
     {
         "summary": {
-            "static_ram": 12154,
+            "static_ram": 12320,
             "static_ram_delta": 0,
-            "total_flash": 55094,
+            "total_flash": 56998,
             "total_flash_delta": 0
         }
     }
